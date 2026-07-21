@@ -48,64 +48,80 @@
 
 <script>
     const contractAddress = "0x2AD38dB18f1C292EBF12502844837C3b7C809ac7";
+    const giwaChainId = "0x164C6"; // 91342 in Hexadecimal
+
     const contractABI = [
-        "function approvedSafeList(address) public view returns (bool)",
         "function updateSafeList(address _target, bool _status) public",
-        "function emergencyFreeze() public",
-        "function isFrozen() public view returns (bool)",
-        "function guardianKey() public view returns (address)",
-        "function primaryKey() public view returns (address)"
+        "function emergencyFreeze() public"
     ];
 
-    let provider, signer, contract;
-
-    async function connectWallet() {
-        if (window.ethereum) {
-            // Re-initialize provider freshly on every click to avoid "underlying network changed" error
-            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-            await provider.send("eth_requestAccounts", []);
-            signer = provider.getSigner();
-            const address = await signer.getAddress();
-            document.getElementById("walletAddress").innerText = "Active Wallet: " + address;
-            contract = new ethers.Contract(contractAddress, contractABI, signer);
-        } else {
-            alert("Please open this page using MetaMask or OKX Wallet.");
+    async function ensureGiwaNetwork() {
+        if (!window.ethereum) return alert("MetaMask is required!");
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: giwaChainId }],
+            });
+        } catch (switchError) {
+            // If GIWA network is not added to MetaMask, add it automatically
+            if (switchError.code === 4902) {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: giwaChainId,
+                        chainName: 'GIWA Sepolia Testnet',
+                        rpcUrls: ['https://sepolia-rpc.giwa.io'],
+                        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }
+                    }],
+                });
+            }
         }
     }
 
+    async function connectWallet() {
+        if (!window.ethereum) return alert("Please open using MetaMask.");
+        await ensureGiwaNetwork();
+        const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const address = await signer.getAddress();
+        document.getElementById("walletAddress").innerText = "Active Wallet: " + address;
+    }
+
     async function updateSafeList(status) {
-        if (!contract) await connectWallet();
+        if (!window.ethereum) return;
         try {
+            await ensureGiwaNetwork();
             const target = document.getElementById("safeAddressInput").value;
             if(!target) return alert("Please enter a target wallet address!");
-            
-            // Re-bind signer right before sending transaction
-            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-            signer = provider.getSigner();
-            const liveContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-            const tx = await liveContract.updateSafeList(target, status, { gasLimit: 300000 });
-            alert("Transaction requested! Check your wallet extension to confirm.");
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+            const tx = await contract.updateSafeList(target, status, { gasLimit: 300000 });
+            alert("Transaction requested! Check MetaMask to confirm.");
             await tx.wait();
             alert("Success! Safe list updated on GIWA Sepolia!");
         } catch (err) {
-            alert("Error: " + (err.reason || err.message));
+            alert("Transaction details: " + (err.reason || err.message));
         }
     }
 
     async function triggerEmergencyFreeze() {
-        if (!contract) await connectWallet();
+        if (!window.ethereum) return;
         try {
-            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-            signer = provider.getSigner();
-            const liveContract = new ethers.Contract(contractAddress, contractABI, signer);
+            await ensureGiwaNetwork();
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-            const tx = await liveContract.emergencyFreeze({ gasLimit: 300000 });
+            const tx = await contract.emergencyFreeze({ gasLimit: 300000 });
             alert("Emergency Freeze Triggered! Confirming transaction in wallet...");
             await tx.wait();
             alert("VAULT FROZEN! Funds swept safely to Key 2.");
         } catch (err) {
-            alert("Error: Only Key 2 (Guardian) can call Emergency Freeze!");
+            alert("Transaction details: " + (err.reason || err.message));
         }
     }
 </script>
