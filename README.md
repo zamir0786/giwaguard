@@ -24,7 +24,7 @@
     <p style="text-align: center; color: #94a3b8;">Two-Key L2 Vault Security</p>
 
     <div class="info">
-        <strong>Contract:</strong> <code>0x2AD...09ac7</code><br>
+        <strong>Contract:</strong> <code>0x2AD38dB18f1C292EBF12502844837C3b7C809ac7</code><br>
         <strong>Network:</strong> GIWA Sepolia Testnet (91342)
     </div>
 
@@ -47,7 +47,7 @@
 </div>
 
 <script>
-    const contractAddress = "0x2AD...09ac7"; // Your deployed contract address
+    const contractAddress = "0x2AD38dB18f1C292EBF12502844837C3b7C809ac7";
     const contractABI = [
         "function approvedSafeList(address) public view returns (bool)",
         "function updateSafeList(address _target, bool _status) public",
@@ -61,7 +61,8 @@
 
     async function connectWallet() {
         if (window.ethereum) {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
+            // Re-initialize provider freshly on every click to avoid "underlying network changed" error
+            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             await provider.send("eth_requestAccounts", []);
             signer = provider.getSigner();
             const address = await signer.getAddress();
@@ -73,23 +74,33 @@
     }
 
     async function updateSafeList(status) {
-        if (!contract) return alert("Connect your wallet first!");
+        if (!contract) await connectWallet();
         try {
             const target = document.getElementById("safeAddressInput").value;
-            if(!target) return alert("Please enter a target address first!");
-            const tx = await contract.updateSafeList(target, status);
-            alert("Transaction submitted! Confirm in your wallet.");
+            if(!target) return alert("Please enter a target wallet address!");
+            
+            // Re-bind signer right before sending transaction
+            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            signer = provider.getSigner();
+            const liveContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+            const tx = await liveContract.updateSafeList(target, status, { gasLimit: 300000 });
+            alert("Transaction requested! Check your wallet extension to confirm.");
             await tx.wait();
-            alert("Safe list updated successfully on GIWA Sepolia!");
+            alert("Success! Safe list updated on GIWA Sepolia!");
         } catch (err) {
             alert("Error: " + (err.reason || err.message));
         }
     }
 
     async function triggerEmergencyFreeze() {
-        if (!contract) return alert("Connect your wallet first!");
+        if (!contract) await connectWallet();
         try {
-            const tx = await contract.emergencyFreeze();
+            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            signer = provider.getSigner();
+            const liveContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+            const tx = await liveContract.emergencyFreeze({ gasLimit: 300000 });
             alert("Emergency Freeze Triggered! Confirming transaction in wallet...");
             await tx.wait();
             alert("VAULT FROZEN! Funds swept safely to Key 2.");
