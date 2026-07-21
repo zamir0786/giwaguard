@@ -48,38 +48,13 @@
 
 <script>
     const contractAddress = ethers.utils.getAddress("0x2AD38dB18f1C292EBF12502844837C3b7C809ac7");
-    const giwaChainId = "0x164C6"; // 91342 in Hexadecimal
-
     const contractABI = [
         "function updateSafeList(address _target, bool _status) public",
         "function emergencyFreeze() public"
     ];
 
-    async function ensureGiwaNetwork() {
-        if (!window.ethereum) return alert("MetaMask is required!");
-        try {
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: giwaChainId }],
-            });
-        } catch (switchError) {
-            if (switchError.code === 4902) {
-                await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{
-                        chainId: giwaChainId,
-                        chainName: 'GIWA Sepolia Testnet',
-                        rpcUrls: ['https://sepolia-rpc.giwa.io'],
-                        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }
-                    }],
-                });
-            }
-        }
-    }
-
     async function connectWallet() {
         if (!window.ethereum) return alert("Please open using MetaMask.");
-        await ensureGiwaNetwork();
         const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
@@ -88,15 +63,12 @@
     }
 
     async function updateSafeList(status) {
-        if (!window.ethereum) return;
+        if (!window.ethereum) return alert("Please open using MetaMask.");
         try {
-            await ensureGiwaNetwork();
             let targetInput = document.getElementById("safeAddressInput").value.trim();
             if(!targetInput) return alert("Please enter a target wallet address!");
 
-            // Automatically format the address into a valid Checksum address
             const formattedTarget = ethers.utils.getAddress(targetInput);
-
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = provider.getSigner();
             const contract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -111,9 +83,8 @@
     }
 
     async function triggerEmergencyFreeze() {
-        if (!window.ethereum) return;
+        if (!window.ethereum) return alert("Please open using MetaMask.");
         try {
-            await ensureGiwaNetwork();
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = provider.getSigner();
             const contract = new ethers.Contract(contractAddress, contractABI, signer);
