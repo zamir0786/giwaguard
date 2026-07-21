@@ -53,6 +53,15 @@
         "function emergencyFreeze() public"
     ];
 
+    function safeChecksum(addr) {
+        try {
+            return ethers.utils.getAddress(addr);
+        } catch (e) {
+            // Fallback for non-checksummed addresses
+            return ethers.utils.getAddress(addr.toLowerCase());
+        }
+    }
+
     async function connectWallet() {
         if (!window.ethereum) return alert("Please open using MetaMask.");
         const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
@@ -68,8 +77,8 @@
             let targetInput = document.getElementById("safeAddressInput").value.trim();
             if(!targetInput) return alert("Please enter a target wallet address!");
 
-            const formattedTarget = ethers.utils.getAddress(targetInput);
-            const formattedContract = ethers.utils.getAddress(rawContractAddress);
+            const formattedTarget = safeChecksum(targetInput);
+            const formattedContract = safeChecksum(rawContractAddress);
 
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = provider.getSigner();
@@ -87,7 +96,7 @@
     async function triggerEmergencyFreeze() {
         if (!window.ethereum) return alert("Please open using MetaMask.");
         try {
-            const formattedContract = ethers.utils.getAddress(rawContractAddress);
+            const formattedContract = safeChecksum(rawContractAddress);
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = provider.getSigner();
             const contract = new ethers.Contract(formattedContract, contractABI, signer);
