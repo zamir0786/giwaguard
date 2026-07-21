@@ -47,7 +47,7 @@
 </div>
 
 <script>
-    const contractAddress = "0x2AD38dB18f1C292EBF12502844837C3b7C809ac7";
+    const contractAddress = ethers.utils.getAddress("0x2AD38dB18f1C292EBF12502844837C3b7C809ac7");
     const giwaChainId = "0x164C6"; // 91342 in Hexadecimal
 
     const contractABI = [
@@ -63,7 +63,6 @@
                 params: [{ chainId: giwaChainId }],
             });
         } catch (switchError) {
-            // If GIWA network is not added to MetaMask, add it automatically
             if (switchError.code === 4902) {
                 await window.ethereum.request({
                     method: 'wallet_addEthereumChain',
@@ -92,14 +91,17 @@
         if (!window.ethereum) return;
         try {
             await ensureGiwaNetwork();
-            const target = document.getElementById("safeAddressInput").value;
-            if(!target) return alert("Please enter a target wallet address!");
+            let targetInput = document.getElementById("safeAddressInput").value.trim();
+            if(!targetInput) return alert("Please enter a target wallet address!");
+
+            // Automatically format the address into a valid Checksum address
+            const formattedTarget = ethers.utils.getAddress(targetInput);
 
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = provider.getSigner();
             const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-            const tx = await contract.updateSafeList(target, status, { gasLimit: 300000 });
+            const tx = await contract.updateSafeList(formattedTarget, status, { gasLimit: 300000 });
             alert("Transaction requested! Check MetaMask to confirm.");
             await tx.wait();
             alert("Success! Safe list updated on GIWA Sepolia!");
