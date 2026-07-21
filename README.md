@@ -28,7 +28,7 @@
         <strong>Network:</strong> GIWA Sepolia Testnet (91342)
     </div>
 
-    <button onclick="connectWallet()">🔑 Connect Connected Wallet</button>
+    <button onclick="connectWallet()">🔑 Connect Wallet</button>
     <p id="walletAddress" style="color: #4ade80; text-align: center; font-size: 0.9em;"></p>
 
     <hr style="border-color: #334155;">
@@ -47,7 +47,7 @@
 </div>
 
 <script>
-    const contractAddress = ethers.utils.getAddress("0x2AD38dB18f1C292EBF12502844837C3b7C809ac7");
+    const rawContractAddress = "0x2AD38dB18f1C292EBF12502844837C3b7C809ac7";
     const contractABI = [
         "function updateSafeList(address _target, bool _status) public",
         "function emergencyFreeze() public"
@@ -69,9 +69,11 @@
             if(!targetInput) return alert("Please enter a target wallet address!");
 
             const formattedTarget = ethers.utils.getAddress(targetInput);
+            const formattedContract = ethers.utils.getAddress(rawContractAddress);
+
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = provider.getSigner();
-            const contract = new ethers.Contract(contractAddress, contractABI, signer);
+            const contract = new ethers.Contract(formattedContract, contractABI, signer);
 
             const tx = await contract.updateSafeList(formattedTarget, status, { gasLimit: 300000 });
             alert("Transaction requested! Check MetaMask to confirm.");
@@ -85,9 +87,10 @@
     async function triggerEmergencyFreeze() {
         if (!window.ethereum) return alert("Please open using MetaMask.");
         try {
+            const formattedContract = ethers.utils.getAddress(rawContractAddress);
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = provider.getSigner();
-            const contract = new ethers.Contract(contractAddress, contractABI, signer);
+            const contract = new ethers.Contract(formattedContract, contractABI, signer);
 
             const tx = await contract.emergencyFreeze({ gasLimit: 300000 });
             alert("Emergency Freeze Triggered! Confirming transaction in wallet...");
