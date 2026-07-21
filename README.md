@@ -68,12 +68,12 @@
 
 <script>
     const rawContractAddress = "0x2AD38dB18f1C292EBF12502844837C3b7C809ac7";
+    
+    // Clean Ethers.js ABI syntax
     const contractABI = [
         "function updateSafeList(address _target, bool _status) public",
         "function emergencyFreeze() public",
-        "function safeTransfer(address payable _to, uint256 _amount) public",
-        "receive() external payable",
-        "fallback() external payable"
+        "function safeTransfer(address payable _to, uint256 _amount) public"
     ];
 
     function safeChecksum(addr) {
