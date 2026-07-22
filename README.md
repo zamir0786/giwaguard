@@ -7,11 +7,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Force-hide any default GitHub Pages theme elements or external headers */
-        header, #header, h1:not(.logo-title), hr:first-of-type {
-            display: none !important;
-        }
-
         :root {
             --bg-color: #030712;
             --card-bg: rgba(17, 24, 39, 0.75);
