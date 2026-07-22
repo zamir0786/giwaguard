@@ -2,75 +2,177 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>GiwaGuard - Two-Key Security Vault</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiwaGuard - Institutional L2 Security Vault</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
-        .card { background: #1e293b; max-width: 520px; margin: 0 auto; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: left; }
-        h1, h3 { text-align: center; color: #38bdf8; }
-        .info { background: #334155; padding: 12px; border-radius: 6px; font-size: 0.85em; word-break: break-all; margin-bottom: 20px; }
-        .grid-box { display: flex; gap: 10px; margin-bottom: 15px; }
-        .balance-box { flex: 1; background: #0284c7; padding: 15px; border-radius: 8px; text-align: center; }
-        .count-box { flex: 1; background: #0d9488; padding: 15px; border-radius: 8px; text-align: center; }
-        button { background: #0284c7; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; margin: 8px 0; cursor: pointer; }
-        button:hover { background: #0369a1; }
-        .danger { background: #dc2626; }
-        .danger:hover { background: #b91c1c; }
-        input { width: 95%; padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; }
-        .badge { background: #38bdf8; color: #0f172a; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
+        :root {
+            --bg-color: #030712;
+            --card-bg: rgba(17, 24, 39, 0.75);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --primary-cyan: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --rose: #f43f5e;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: radial-gradient(circle at 50% 0%, #0f172a 0%, #030712 100%);
+            color: var(--text-main); 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 15px;
+        }
+
+        .container { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            width: 100%;
+            max-width: 560px; 
+            padding: 32px; 
+            border-radius: 20px; 
+            border: 1px solid var(--card-border);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-glow);
+        }
+
+        .header { text-align: center; margin-bottom: 24px; }
+        .logo-title { font-size: 1.8rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .logo-title span { color: var(--primary-cyan); }
+        .subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+        .network-info { 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            padding: 12px 16px; 
+            border-radius: 12px; 
+            font-size: 0.8rem; 
+            word-break: break-all; 
+            margin-bottom: 20px;
+        }
+        .network-info strong { color: var(--primary-cyan); }
+
+        .btn { 
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: white; 
+            border: none; 
+            padding: 14px; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            font-size: 0.95rem;
+            width: 100%; 
+            cursor: pointer; 
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5); }
+        .btn-emerald { background: linear-gradient(135deg, #10b981 0%, #047857 100%); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+        .btn-emerald:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5); }
+        .btn-amber { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+        .btn-amber:hover { box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
+        .btn-slate { background: rgba(51, 65, 85, 0.8); }
+        .btn-slate:hover { background: rgba(71, 85, 105, 1); }
+        .btn-danger { background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%); box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3); }
+        .btn-danger:hover { box-shadow: 0 6px 20px rgba(244, 63, 94, 0.5); }
+
+        .wallet-status { text-align: center; font-size: 0.85rem; color: #4ade80; margin: 10px 0; font-weight: 600; word-break: break-all; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .stat-card { 
+            background: rgba(15, 23, 42, 0.8); 
+            border: 1px solid rgba(255,255,255,0.08); 
+            padding: 16px; 
+            border-radius: 12px; 
+            text-align: center;
+        }
+        .stat-card span { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card h2 { font-size: 1.3rem; margin-top: 6px; font-weight: 800; color: var(--text-main); }
+
+        .section-title { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+        .section-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
+        
+        input { 
+            width: 100%; 
+            padding: 12px 14px; 
+            margin-bottom: 10px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            background: rgba(3, 7, 18, 0.6); 
+            color: white; 
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+        input:focus { border-color: var(--primary-cyan); }
+
+        .badge { background: rgba(56, 189, 248, 0.15); color: var(--primary-cyan); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+        .divider { height: 1px; background: rgba(255, 255, 255, 0.08); margin: 24px 0; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h1>🛡️ GiwaGuard Vault</h1>
-    <p style="text-align: center; color: #94a3b8;">Two-Key L2 Vault Security</p>
+<div class="container">
+    <div class="header">
+        <div class="logo-title">🛡️ Giwa<span>Guard</span></div>
+        <div class="subtitle">Two-Key L2 Vault Protocol</div>
+    </div>
 
-    <div class="info">
-        <strong>Contract:</strong> <code id="displayContract">0x4C719b47ddc62f48Bc17d2CB8Cb1C358E83FaE03</code><br>
+    <div class="network-info">
+        <strong>Vault Contract:</strong> <span id="displayContract">0x4C719b47ddc62f48Bc17d2CB8Cb1C358E83FaE03</span><br>
         <strong>Network:</strong> GIWA Sepolia Testnet (91342)
     </div>
 
-    <button onclick="connectWallet()">🔑 Connect Wallet</button>
-    <p id="walletAddress" style="color: #4ade80; text-align: center; font-size: 0.9em;"></p>
+    <button class="btn" onclick="connectWallet()">🔑 Connect Wallet</button>
+    <div id="walletAddress" class="wallet-status"></div>
 
-    <div class="grid-box">
-        <div class="balance-box">
-            <span style="font-size: 0.8em; text-transform: uppercase;">Vault Balance</span>
-            <h2 id="vaultBalance" style="margin: 5px 0 0 0;">0.00 ETH</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span>Vault Balance</span>
+            <h2 id="vaultBalance">0.00 ETH</h2>
         </div>
-        <div class="count-box">
-            <span style="font-size: 0.8em; text-transform: uppercase;">Whitelisted Addresses</span>
-            <h2 id="whitelistCount" style="margin: 5px 0 0 0;">0</h2>
+        <div class="stat-card">
+            <span>Safe List Count</span>
+            <h2 id="whitelistCount">0</h2>
         </div>
     </div>
 
-    <hr style="border-color: #334155;">
+    <div class="divider"></div>
 
-    <h3>📥 Deposit / Add Funds</h3>
+    <div class="section-title">📥 Deposit Funds</div>
+    <div class="section-desc">Add native ETH into the vault contract.</div>
     <input type="number" id="depositAmount" placeholder="Amount in ETH (e.g. 0.001)" step="0.0001">
-    <button style="background: #10b981;" onclick="depositETH()">💰 Deposit ETH into Vault</button>
+    <button class="btn btn-emerald" onclick="depositETH()">💰 Deposit ETH</button>
 
-    <hr style="border-color: #334155;">
+    <div class="divider"></div>
 
-    <h3>1️⃣ Manage Safe List <span class="badge">KEY 2 ONLY</span></h3>
-    <p style="font-size: 0.8em; color: #94a3b8;">Key 2 pre-approves or wipes trusted withdrawal addresses.</p>
-    <input type="text" id="safeAddressInput" placeholder="Enter Target Wallet Address">
-    <button onclick="updateSafeList(true)">✅ Approve Address to Safe List</button>
-    <button style="background: #64748b;" onclick="updateSafeList(false)">🧹 Wipe Address from Safe List</button>
+    <div class="section-title">1️⃣ Manage Safe List <span class="badge">KEY 2 ONLY</span></div>
+    <div class="section-desc">Key 2 pre-approves or revokes trusted withdrawal destinations.</div>
+    <input type="text" id="safeAddressInput" placeholder="Target Wallet Address (0x...)">
+    <button class="btn" style="margin-bottom: 8px;" onclick="updateSafeList(true)">✅ Approve Address</button>
+    <button class="btn btn-slate" onclick="updateSafeList(false)">🧹 Wipe / Revoke Address</button>
 
-    <hr style="border-color: #334155;">
+    <div class="divider"></div>
 
-    <h3>2️⃣ Withdraw / Remove Funds <span class="badge">SAFE LIST ENFORCED</span></h3>
-    <p style="font-size: 0.8em; color: #94a3b8;">Transfer funds out (Strictly blocked if address is not whitelisted!).</p>
+    <div class="section-title">2️⃣ Safe Withdrawal <span class="badge">KEY 1 (SAFE LIST)</span></div>
+    <div class="section-desc">Transfer funds out (Strictly blocked if recipient is unapproved).</div>
     <input type="text" id="withdrawRecipient" placeholder="Recipient Address">
     <input type="number" id="withdrawAmount" placeholder="Amount in ETH" step="0.0001">
-    <button style="background: #f59e0b;" onclick="withdrawETH()">📤 Withdraw / Send Funds</button>
+    <button class="btn btn-amber" onclick="withdrawETH()">📤 Withdraw Funds</button>
 
-    <hr style="border-color: #334155;">
+    <div class="divider"></div>
 
-    <h3>3️⃣ Emergency Vault Recovery <span class="badge">KEY 2 ONLY</span></h3>
-    <button class="danger" onclick="triggerEmergencyFreeze()">🚨 EMERGENCY FREEZE & RECOVER ALL FUNDS</button>
+    <div class="section-title">3️⃣ Emergency Vault Recovery <span class="badge">KEY 2 ONLY</span></div>
+    <div class="section-desc" style="color: #fca5a5;">If Key 1 is compromised: Instantly freeze vault and sweep all funds.</div>
+    <button class="btn btn-danger" onclick="triggerEmergencyFreeze()">🚨 EMERGENCY FREEZE & SWEEP</button>
 </div>
 
 <script>
@@ -98,16 +200,13 @@
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const formattedContract = safeChecksum(rawContractAddress);
             
-            // Fetch Balance
             const rawBalance = await provider.getBalance(formattedContract);
             const ethBalance = ethers.utils.formatEther(rawBalance);
             document.getElementById("vaultBalance").innerText = parseFloat(ethBalance).toFixed(4) + " ETH";
 
-            // Fetch Whitelisted Count
             const contract = new ethers.Contract(formattedContract, contractABI, provider);
             const count = await contract.getWhitelistedCount();
             document.getElementById("whitelistCount").innerText = count.toString();
-            document.getElementById("displayContract").innerText = formattedContract;
         } catch(e) {
             console.log("Dashboard fetch error:", e);
         }
@@ -184,7 +283,6 @@
             const signer = provider.getSigner();
             const contract = new ethers.Contract(formattedContract, contractABI, signer);
 
-            // Pre-check whitelist state on-chain
             const approved = await contract.isWhitelisted(formattedRecipient);
             if(!approved) {
                 return alert("⛔ SECURITY BLOCK: This recipient address is NOT whitelisted by Key 2! Transaction blocked.");
