@@ -16,9 +16,6 @@
         .danger:hover { background: #b91c1c; }
         input { width: 95%; padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; }
         .badge { background: #38bdf8; color: #0f172a; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
-        .status-tag { font-weight: bold; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 5px; font-size: 0.85em; }
-        .approved { background: #10b981; color: white; }
-        .blocked { background: #ef4444; color: white; }
     </style>
 </head>
 <body>
@@ -58,9 +55,8 @@
 
     <h3>2️⃣ Withdraw / Remove Funds <span class="badge">KEY 1 (SAFE LIST)</span></h3>
     <p style="font-size: 0.8em; color: #94a3b8;">Transfer funds out (Only allowed to Key 2 whitelisted addresses!).</p>
-    <input type="text" id="withdrawRecipient" placeholder="Recipient Address (Must be Whitelisted)" oninput="checkWhitelistStatus()">
-    <div id="whitelistBadge"></div>
-    <input type="number" id="withdrawAmount" placeholder="Amount in ETH" step="0.0001" style="margin-top: 8px;">
+    <input type="text" id="withdrawRecipient" placeholder="Recipient Address (Must be Whitelisted)">
+    <input type="number" id="withdrawAmount" placeholder="Amount in ETH" step="0.0001">
     <button style="background: #f59e0b;" onclick="withdrawETH()">📤 Withdraw / Send Funds</button>
 
     <hr style="border-color: #334155;">
@@ -76,8 +72,7 @@
     const contractABI = [
         "function updateSafeList(address _target, bool _status) public",
         "function emergencyFreeze() public",
-        "function safeTransfer(address payable _to, uint256 _amount) public",
-        "function approvedSafeList(address) public view returns (bool)"
+        "function safeTransfer(address payable _to, uint256 _amount) public"
     ];
 
     function safeChecksum(addr) {
@@ -95,34 +90,6 @@
         const rawBalance = await provider.getBalance(formattedContract);
         const ethBalance = ethers.utils.formatEther(rawBalance);
         document.getElementById("vaultBalance").innerText = parseFloat(ethBalance).toFixed(4) + " ETH";
-    }
-
-    async function checkWhitelistStatus() {
-        if (!window.ethereum) return;
-        const recipientInput = document.getElementById("withdrawRecipient").value.trim();
-        const badgeDiv = document.getElementById("whitelistBadge");
-
-        if (!recipientInput || recipientInput.length < 42) {
-            badgeDiv.innerHTML = "";
-            return;
-        }
-
-        try {
-            const formattedRecipient = safeChecksum(recipientInput);
-            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-            const formattedContract = safeChecksum(rawContractAddress);
-            const contract = new ethers.Contract(formattedContract, contractABI, provider);
-
-            const isApproved = await contract.approvedSafeList(formattedRecipient);
-
-            if (isApproved) {
-                badgeDiv.innerHTML = `<span class="status-tag approved">✅ Address Whitelisted on Chain</span>`;
-            } else {
-                badgeDiv.innerHTML = `<span class="status-tag blocked">⛔ NOT Whitelisted — Withdrawal Will Fail</span>`;
-            }
-        } catch (e) {
-            badgeDiv.innerHTML = "";
-        }
     }
 
     async function connectWallet() {
@@ -176,7 +143,6 @@
             alert("Transaction requested! Check MetaMask to confirm.");
             await tx.wait();
             alert("Success! Safe list updated on GIWA Sepolia!");
-            await checkWhitelistStatus();
         } catch (err) {
             alert("Transaction details: " + (err.reason || err.message));
         }
@@ -196,12 +162,6 @@
             const signer = provider.getSigner();
             const contract = new ethers.Contract(formattedContract, contractABI, signer);
 
-            // Explicitly check whitelist first on-chain
-            const isWhitelisted = await contract.approvedSafeList(formattedRecipient);
-            if (!isWhitelisted) {
-                return alert("⛔ SECURITY BLOCK: Address is NOT whitelisted by Key 2! Transaction canceled.");
-            }
-
             const weiAmount = ethers.utils.parseEther(amount);
             const tx = await contract.safeTransfer(formattedRecipient, weiAmount, { gasLimit: 300000 });
 
@@ -210,7 +170,7 @@
             alert("Withdrawal successful! Funds sent to whitelisted address.");
             await loadBalance();
         } catch (err) {
-            alert("Withdrawal failed: " + (err.reason || err.message));
+            alert("Withdrawal blocked by contract: Address is either not whitelisted or sender is unauthorized!");
         }
     }
 
