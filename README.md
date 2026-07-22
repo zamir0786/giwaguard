@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +7,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Force-hide any default GitHub Pages theme elements or external headers */
+        header, #header, h1:not(.logo-title), hr:first-of-type {
+            display: none !important;
+        }
+
         :root {
             --bg-color: #030712;
             --card-bg: rgba(17, 24, 39, 0.75);
@@ -43,7 +49,7 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-glow);
         }
 
-        .header { text-align: center; margin-bottom: 24px; }
+        .header-box { text-align: center; margin-bottom: 24px; }
         .logo-title { font-size: 1.8rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px; }
         .logo-title span { color: var(--primary-cyan); }
         .subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
@@ -120,8 +126,8 @@
 <body>
 
 <div class="container">
-    <div class="header">
-        <div class="logo-title">🛡️ Giwa<span>Guard</span></div>
+    <div class="header-box">
+        <h1 class="logo-title">🛡️ Giwa<span>Guard</span></h1>
         <div class="subtitle">Two-Key L2 Vault Protocol</div>
     </div>
 
