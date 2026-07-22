@@ -127,7 +127,7 @@
     </div>
 
     <div class="network-info">
-        <strong>Vault Contract:</strong> <span id="displayContract">0x4C719b47ddc62f48Bc17d2CB8Cb1C358E83FaE03</span><br>
+        <strong>Vault Contract:</strong> <span id="displayContract">0xCdA1412e7be76aB6C8cb7f7e2C746AC9A6bda535</span><br>
         <strong>Network:</strong> GIWA Sepolia Testnet (91342)
     </div>
 
@@ -176,7 +176,7 @@
 </div>
 
 <script>
-    const rawContractAddress = "0x4C719b47ddc62f48Bc17d2CB8Cb1C358E83FaE03";
+    const rawContractAddress = "0xCdA1412e7be76aB6C8cb7f7e2C746AC9A6bda535";
     
     const contractABI = [
         "function updateSafeList(address _target, bool _status) public",
