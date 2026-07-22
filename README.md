@@ -9,7 +9,9 @@
         .card { background: #1e293b; max-width: 520px; margin: 0 auto; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: left; }
         h1, h3 { text-align: center; color: #38bdf8; }
         .info { background: #334155; padding: 12px; border-radius: 6px; font-size: 0.85em; word-break: break-all; margin-bottom: 20px; }
-        .balance-box { background: #0284c7; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; }
+        .grid-box { display: flex; gap: 10px; margin-bottom: 15px; }
+        .balance-box { flex: 1; background: #0284c7; padding: 15px; border-radius: 8px; text-align: center; }
+        .count-box { flex: 1; background: #0d9488; padding: 15px; border-radius: 8px; text-align: center; }
         button { background: #0284c7; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; margin: 8px 0; cursor: pointer; }
         button:hover { background: #0369a1; }
         .danger { background: #dc2626; }
@@ -25,16 +27,22 @@
     <p style="text-align: center; color: #94a3b8;">Two-Key L2 Vault Security</p>
 
     <div class="info">
-        <strong>Contract:</strong> <code>0x2AD38dB18f1C292EBF12502844837C3b7C809ac7</code><br>
+        <strong>Contract:</strong> <code id="displayContract">0x4C719b47ddc62f48Bc17d2CB8Cb1C358E83FaE03</code><br>
         <strong>Network:</strong> GIWA Sepolia Testnet (91342)
     </div>
 
     <button onclick="connectWallet()">🔑 Connect Wallet</button>
     <p id="walletAddress" style="color: #4ade80; text-align: center; font-size: 0.9em;"></p>
 
-    <div class="balance-box">
-        <span style="font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;">Vault Balance</span>
-        <h2 id="vaultBalance" style="margin: 5px 0 0 0;">0.00 ETH</h2>
+    <div class="grid-box">
+        <div class="balance-box">
+            <span style="font-size: 0.8em; text-transform: uppercase;">Vault Balance</span>
+            <h2 id="vaultBalance" style="margin: 5px 0 0 0;">0.00 ETH</h2>
+        </div>
+        <div class="count-box">
+            <span style="font-size: 0.8em; text-transform: uppercase;">Whitelisted Addresses</span>
+            <h2 id="whitelistCount" style="margin: 5px 0 0 0;">0</h2>
+        </div>
     </div>
 
     <hr style="border-color: #334155;">
@@ -53,27 +61,27 @@
 
     <hr style="border-color: #334155;">
 
-    <h3>2️⃣ Withdraw / Remove Funds <span class="badge">KEY 1 (SAFE LIST)</span></h3>
-    <p style="font-size: 0.8em; color: #94a3b8;">Transfer funds out (Only allowed to Key 2 whitelisted addresses!).</p>
-    <input type="text" id="withdrawRecipient" placeholder="Recipient Address (Must be Whitelisted)">
+    <h3>2️⃣ Withdraw / Remove Funds <span class="badge">SAFE LIST ENFORCED</span></h3>
+    <p style="font-size: 0.8em; color: #94a3b8;">Transfer funds out (Strictly blocked if address is not whitelisted!).</p>
+    <input type="text" id="withdrawRecipient" placeholder="Recipient Address">
     <input type="number" id="withdrawAmount" placeholder="Amount in ETH" step="0.0001">
     <button style="background: #f59e0b;" onclick="withdrawETH()">📤 Withdraw / Send Funds</button>
 
     <hr style="border-color: #334155;">
 
     <h3>3️⃣ Emergency Vault Recovery <span class="badge">KEY 2 ONLY</span></h3>
-    <p style="font-size: 0.8em; color: #f87171;">If Key 1 is hacked: Freeze contract and sweep ALL funds to Key 2 instantly.</p>
     <button class="danger" onclick="triggerEmergencyFreeze()">🚨 EMERGENCY FREEZE & RECOVER ALL FUNDS</button>
 </div>
 
 <script>
-    const rawContractAddress = "0x2AD38dB18f1C292EBF12502844837C3b7C809ac7";
+    const rawContractAddress = "0x4C719b47ddc62f48Bc17d2CB8Cb1C358E83FaE03";
     
-    // Exact ABI function signatures matching deployed contract write functions
     const contractABI = [
         "function updateSafeList(address _target, bool _status) public",
         "function emergencyFreeze() public",
-        "function safeTransfer(address payable _to, uint256 _amount) public"
+        "function safeTransfer(address payable _to, uint256 _amount) public",
+        "function getWhitelistedCount() public view returns (uint256)",
+        "function isWhitelisted(address) public view returns (bool)"
     ];
 
     function safeChecksum(addr) {
@@ -84,16 +92,24 @@
         }
     }
 
-    async function loadBalance() {
+    async function updateDashboard() {
         if (!window.ethereum) return;
         try {
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const formattedContract = safeChecksum(rawContractAddress);
+            
+            // Fetch Balance
             const rawBalance = await provider.getBalance(formattedContract);
             const ethBalance = ethers.utils.formatEther(rawBalance);
             document.getElementById("vaultBalance").innerText = parseFloat(ethBalance).toFixed(4) + " ETH";
+
+            // Fetch Whitelisted Count
+            const contract = new ethers.Contract(formattedContract, contractABI, provider);
+            const count = await contract.getWhitelistedCount();
+            document.getElementById("whitelistCount").innerText = count.toString();
+            document.getElementById("displayContract").innerText = formattedContract;
         } catch(e) {
-            console.log("Balance load error:", e);
+            console.log("Dashboard fetch error:", e);
         }
     }
 
@@ -104,7 +120,7 @@
         const signer = provider.getSigner();
         const address = await signer.getAddress();
         document.getElementById("walletAddress").innerText = "Active Wallet: " + address;
-        await loadBalance();
+        await updateDashboard();
     }
 
     async function depositETH() {
@@ -122,10 +138,10 @@
                 value: ethers.utils.parseEther(amount)
             });
 
-            alert("Deposit transaction submitted! Confirm in MetaMask.");
+            alert("Deposit transaction submitted!");
             await tx.wait();
             alert("Funds successfully deposited into Vault!");
-            await loadBalance();
+            await updateDashboard();
         } catch (err) {
             alert("Deposit error: " + (err.reason || err.message));
         }
@@ -145,11 +161,12 @@
             const contract = new ethers.Contract(formattedContract, contractABI, signer);
 
             const tx = await contract.updateSafeList(formattedTarget, status, { gasLimit: 300000 });
-            alert("Transaction requested! Check MetaMask to confirm.");
+            alert("Whitelist transaction requested!");
             await tx.wait();
-            alert("Success! Safe list updated on GIWA Sepolia!");
+            alert("Success! Safe list updated!");
+            await updateDashboard();
         } catch (err) {
-            alert("Transaction details: " + (err.reason || err.message));
+            alert("Transaction failed: Only Key 2 can update whitelist!");
         }
     }
 
@@ -158,7 +175,7 @@
         try {
             const recipient = document.getElementById("withdrawRecipient").value.trim();
             const amount = document.getElementById("withdrawAmount").value;
-            if(!recipient || !amount) return alert("Enter both recipient address and amount!");
+            if(!recipient || !amount) return alert("Enter recipient address and amount!");
 
             const formattedRecipient = safeChecksum(recipient);
             const formattedContract = safeChecksum(rawContractAddress);
@@ -167,15 +184,21 @@
             const signer = provider.getSigner();
             const contract = new ethers.Contract(formattedContract, contractABI, signer);
 
+            // Pre-check whitelist state on-chain
+            const approved = await contract.isWhitelisted(formattedRecipient);
+            if(!approved) {
+                return alert("⛔ SECURITY BLOCK: This recipient address is NOT whitelisted by Key 2! Transaction blocked.");
+            }
+
             const weiAmount = ethers.utils.parseEther(amount);
             const tx = await contract.safeTransfer(formattedRecipient, weiAmount, { gasLimit: 300000 });
 
-            alert("Withdrawal requested! Confirming in MetaMask...");
+            alert("Withdrawal requested! Confirming...");
             await tx.wait();
-            alert("Withdrawal successful! Funds sent to whitelisted address.");
-            await loadBalance();
+            alert("🎉 Withdrawal Successful! Real ETH sent from Vault!");
+            await updateDashboard();
         } catch (err) {
-            alert("Withdrawal failed or blocked: " + (err.reason || err.message));
+            alert("Withdrawal blocked by smart contract!");
         }
     }
 
@@ -188,12 +211,12 @@
             const contract = new ethers.Contract(formattedContract, contractABI, signer);
 
             const tx = await contract.emergencyFreeze({ gasLimit: 300000 });
-            alert("Emergency Freeze Triggered! Confirming transaction in wallet...");
+            alert("Emergency Freeze Triggered!");
             await tx.wait();
-            alert("VAULT FROZEN! Funds swept safely to Key 2.");
-            await loadBalance();
+            alert("🚨 VAULT FROZEN! Funds swept safely to Key 2.");
+            await updateDashboard();
         } catch (err) {
-            alert("Transaction details: " + (err.reason || err.message));
+            alert("Transaction failed: Only Key 2 can trigger freeze!");
         }
     }
 </script>
