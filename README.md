@@ -69,6 +69,7 @@
 <script>
     const rawContractAddress = "0x2AD38dB18f1C292EBF12502844837C3b7C809ac7";
     
+    // Exact ABI function signatures matching deployed contract write functions
     const contractABI = [
         "function updateSafeList(address _target, bool _status) public",
         "function emergencyFreeze() public",
@@ -85,11 +86,15 @@
 
     async function loadBalance() {
         if (!window.ethereum) return;
-        const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-        const formattedContract = safeChecksum(rawContractAddress);
-        const rawBalance = await provider.getBalance(formattedContract);
-        const ethBalance = ethers.utils.formatEther(rawBalance);
-        document.getElementById("vaultBalance").innerText = parseFloat(ethBalance).toFixed(4) + " ETH";
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            const formattedContract = safeChecksum(rawContractAddress);
+            const rawBalance = await provider.getBalance(formattedContract);
+            const ethBalance = ethers.utils.formatEther(rawBalance);
+            document.getElementById("vaultBalance").innerText = parseFloat(ethBalance).toFixed(4) + " ETH";
+        } catch(e) {
+            console.log("Balance load error:", e);
+        }
     }
 
     async function connectWallet() {
@@ -170,7 +175,7 @@
             alert("Withdrawal successful! Funds sent to whitelisted address.");
             await loadBalance();
         } catch (err) {
-            alert("Withdrawal blocked by contract: Address is either not whitelisted or sender is unauthorized!");
+            alert("Withdrawal failed or blocked: " + (err.reason || err.message));
         }
     }
 
